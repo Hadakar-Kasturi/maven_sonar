@@ -1,16 +1,32 @@
 pipeline {
     agent any
+
+    environment {
+        SONARQUBE_ENV = 'sonarqube-token'  
+    }
+
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                git url: 'https://github.com/Hadakar-Kasturi/maven_sonar.git', branch: 'master'
+                git credentialsId: 'git-creds', url: 'https://github.com/your-org/your-repo.git', branch: 'main'
             }
         }
 
-        stage("Build & SonarQube") {
+        stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('my_sonar') {
-                    sh 'mvn clean package sonar:sonar'
+                withSonarQubeEnv(SONARQUBE_ENV) {
+                    script {
+                        def projectKey = "my-app-${env.BUILD_ID}"
+                        def projectName = "My App Build #${env.BUILD_ID}"
+
+                        sh """
+                            mvn clean verify sonar:sonar \\
+                            -Dsonar.projectKey=${projectKey} \\
+                            -Dsonar.projectName='${projectName}' \\
+                            -Dsonar.projectVersion=${BUILD_ID} \\
+                            -Dsonar.qualitygate.wait=true
+                        """
+                    }
                 }
             }
         }
@@ -18,12 +34,13 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    // Wait for SonarQube Quality Gate status to be analyzed
-                    def qualityGate = waitForQualityGate()
-                    if (qualityGate.status != 'OK') {
-                        error "Quality gate failed. Build failed."
-                    } else {
-                        echo "Quality gate passed!"
+                    timeout(time: 5, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Quality Gate failed: ${qg.status}"
+                        } else {
+                            echo "Quality Gate passed!"
+                        }
                     }
                 }
             }
