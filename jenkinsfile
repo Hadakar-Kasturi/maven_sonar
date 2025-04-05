@@ -1,14 +1,34 @@
-     pipeline {
-        agent none
+https://github.com/Hadakar-Kasturi/maven_sonar.git  
+pipeline {
+        agent any
         stages {
+            
+            stage('Checkout Code') {
+            steps {
+                git url: 'https://github.com/Hadakar-Kasturi/maven_sonar.git', branch: 'master'
+            }
+        }
          
           stage("build & sonarqube") {
-            agent any
             steps {
-              withSonarQubeEnv('Sona_TOKEN') {
+              withSonarQubeEnv('my_sonar') {
                 sh 'mvn clean package sonar:sonar'
               }
             }
           }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    // Wait for SonarQube Quality Gate status to be analyzed
+                    def qualityGate = waitForQualityGate()
+                    if (qualityGate.status != 'OK') {
+                        error "Quality gate failed. Build failed."
+                    } else {
+                        echo "Quality gate passed!"
+                    }
+                }
+            }
         }
-      }
+     }
+}
