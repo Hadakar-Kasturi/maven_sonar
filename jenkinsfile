@@ -1,14 +1,19 @@
-     pipeline {
-        agent none
+ pipeline {
+        agent any
         stages {
+            
+            stage('Checkout Code') {
+            steps {
+                git url: 'https://github.com/karthikvijay139/maven_sonar.git', branch: 'master'
+            }
+        }
          
           stage("build & sonarqube") {
-            agent any
             steps {
-              withSonarQubeEnv('Sona_TOKEN') {
+              withSonarQubeEnv('SonarQube_server') {
                 sh 'mvn clean package sonar:sonar'
               }
             }
           }
         }
-      }
+      }   
