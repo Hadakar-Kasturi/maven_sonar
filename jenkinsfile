@@ -1,21 +1,19 @@
-https://github.com/Hadakar-Kasturi/maven_sonar.git  
 pipeline {
-        agent any
-        stages {
-            
-            stage('Checkout Code') {
+    agent any
+    stages {
+        stage('Checkout Code') {
             steps {
                 git url: 'https://github.com/Hadakar-Kasturi/maven_sonar.git', branch: 'master'
             }
         }
-         
-          stage("build & sonarqube") {
+
+        stage("Build & SonarQube") {
             steps {
-              withSonarQubeEnv('my_sonar') {
-                sh 'mvn clean package sonar:sonar'
-              }
+                withSonarQubeEnv('my_sonar') {
+                    sh 'mvn clean package sonar:sonar'
+                }
             }
-          }
+        }
 
         stage('Quality Gate') {
             steps {
@@ -30,5 +28,5 @@ pipeline {
                 }
             }
         }
-     }
+    }
 }
